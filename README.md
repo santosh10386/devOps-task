@@ -4,12 +4,28 @@
 * Step 2: create the pipeline for triggering the git.
 * Step 3: install the npm on the ec2-instance and create a own ami of it.
 * Step 4: Create a cloudformation template using my ami.
+* Step 5. Setup the auto scaling part.
 
 
 ## Step 1:  Install and configure the jenkins
 
 1. Launch an EC2-instance (Using RHEL AMI) and connect with through any SSH remote software like MobaXterm and putty etc.
 ![alt text for screen readers](https://github.com/santosh10386/devOps-task/blob/main/Screenshots/Screenshot%20(1).png)
+
+* **Note** : bash script for installing jenkins server.
+```
+#bin/bash
+sudo yum install wget -y
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+sudo yum upgrade
+sudo yum -y install  java-11-openjdk java-11-openjdk-devel
+sudo yum install jenkins --nobest -y
+sudo systemctl daemon-reload
+sudo systemctl start jenkins
+sudo systemctl  enable jenkins
+```
 
 
 2. Download the jenkins script which I created for intsalling the jenkins and run this script using ``bash main.sh``.
@@ -82,6 +98,118 @@ dnf module install nodejs/minimal
 
 9. Now **myami** is ready to use.
 ![myimage](https://github.com/santosh10386/devOps-task/blob/main/Screenshots/Screenshot%20(38).png)
+
+##  Step 4: Create a cloudformation template using myami.
+In this section, we will create the cloudformation template so that we can use that as we need.
+
+1. Create a **json template** for cloudformation template.
+```
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Template to Create an EC2 instance in a VPC",
+    "Parameters": {
+        "ImageId": {
+            "Type": "String",
+            "Description": "RHEL Linux  AMI for Europe (Frankfurt)eu-central-1",
+            "Default": "ami-0ccf20ad3aecd35df"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "VPC id",
+            "Default": "vpc-5807b232"
+        },
+        "SubnetId": {
+            "Type": "String",
+            "Description": "Subnet in which to launch an EC2",
+            "Default": "subnet-9d58c4f7"
+        },
+        "AvailabilityZone": {
+            "Type": "String",
+            "Description": "Availability Zone into which instance will launch",
+            "Default": "eu-central-1a"
+        },
+        "InstanceType": {
+            "Type": "String",
+            "Description": "Choosing  t2 micro because it is free",
+            "Default": "t2.micro"
+        },
+        "KeyName": {
+            "Description": "SSH Keypair to login to the instance",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Default": "santosh"
+        }
+    },
+    "Resources": {
+        "DemoInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Ref": "ImageId"
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AvailabilityZone"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "DemoSecurityGroup"
+                    }
+                ],
+                "SubnetId": {
+                    "Ref": "SubnetId"
+                }
+            }
+        },
+        "DemoSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "GroupDescription": "SG to allow SSH access via port 22",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "SSH-SG"
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "DemoInstanceId": {
+            "Description": "Instance Id",
+            "Value": {
+                "Ref": "DemoInstance"
+            }
+        }
+    }
+}
+```
+2. After creating this template file, go your AWS console and search **cloudformation**, then click on **create stack** and following below one.
+![create stack](https://github.com/santosh10386/devOps-task/blob/main/Screenshots/Screenshot%20(33).png)
+
+3. As you can see the graphcal representaion as well of this template.
+![create stack](https://github.com/santosh10386/devOps-task/blob/main/Screenshots/Screenshot%20(34).png)
+
+4. Give the stack name according to you.
+![create stack](https://github.com/santosh10386/devOps-task/blob/main/Screenshots/Screenshot%20(35).png)
+
+5. Review this stack and then save it, after sometime, you wil see something like this.
+![cloudformation](https://github.com/santosh10386/devOps-task/blob/main/Screenshots/Screenshot%20(39).png)
 
 
 
