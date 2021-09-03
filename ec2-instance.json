@@ -1,5 +1,5 @@
 {
-    "AWSTemplateFormatVersion": "2021-09-03",
+    "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Template to Create an EC2 instance in a VPC",
     "Parameters": {
         "ImageId": {
