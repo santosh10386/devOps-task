@@ -1,0 +1,94 @@
+{
+    "AWSTemplateFormatVersion": "2021-09-03",
+    "Description": "Template to Create an EC2 instance in a VPC",
+    "Parameters": {
+        "ImageId": {
+            "Type": "String",
+            "Description": "RHEL Linux  AMI for Europe (Frankfurt)eu-central-1",
+            "Default": "ami-0ccf20ad3aecd35df"
+        },
+        "VpcId": {
+            "Type": "String",
+            "Description": "VPC id",
+            "Default": "vpc-5807b232"
+        },
+        "SubnetId": {
+            "Type": "String",
+            "Description": "Subnet in which to launch an EC2",
+            "Default": "subnet-9d58c4f7"
+        },
+        "AvailabilityZone": {
+            "Type": "String",
+            "Description": "Availability Zone into which instance will launch",
+            "Default": "eu-central-1a"
+        },
+        "InstanceType": {
+            "Type": "String",
+            "Description": "Choosing  t2 micro because it is free",
+            "Default": "t2.micro"
+        },
+        "KeyName": {
+            "Description": "SSH Keypair to login to the instance",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Default": "santosh"
+        }
+    },
+    "Resources": {
+        "DemoInstance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Ref": "ImageId"
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AvailabilityZone"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "DemoSecurityGroup"
+                    }
+                ],
+                "SubnetId": {
+                    "Ref": "SubnetId"
+                }
+            }
+        },
+        "DemoSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "GroupDescription": "SG to allow SSH access via port 22",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "SSH-SG"
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "DemoInstanceId": {
+            "Description": "Instance Id",
+            "Value": {
+                "Ref": "DemoInstance"
+            }
+        }
+    }
+}
